@@ -13,21 +13,36 @@ and detects wins, so clients can't cheat.
 
 ## Tech
 - **Backend:** C# / ASP.NET Core 8, SignalR (WebSockets)
+- **Accounts:** JWT auth, salted **PBKDF2** password hashing
+- **Data:** **EF Core** — SQLite for local dev, PostgreSQL in production (`DATABASE_URL`)
 - **Frontend:** vanilla JS + the `@microsoft/signalr` browser client (CDN), no build step
-- **Deploy:** single container (`Dockerfile`) → Azure App Service / Render / Fly.io
+- **Deploy:** single container (`Dockerfile`) → Render / Fly.io / Azure App Service
 
 ## Architecture
 ```
-Browser (index.html + app.js)
-        │  WebSocket  /gamehub
-        ▼
-GameHub ──▶ GameManager ──▶ GameRoom   (board, turn, winner, players)
-  (per-room broadcast)        ^ all moves validated here
+Browser ──REST /api/auth/*, /api/leaderboard──▶ Minimal APIs ──▶ EF Core ──▶ DB
+   │                                                              (Users: W/L/D)
+   └──WebSocket /gamehub (JWT)──▶ GameHub ──▶ GameManager ──▶ GameRoom
+                                   records results ┘  ^ moves validated, winner found
 ```
+- `Program.cs` — DI, JWT auth, EF Core (SQLite/Postgres), endpoints, hub wiring
 - `Game/GameRoom.cs` — authoritative game state + win detection
-- `Game/GameManager.cs` — thread-safe registry of active rooms
-- `Game/GameHub.cs` — SignalR endpoint: `JoinGame`, `MakeMove`, `Restart`
-- `wwwroot/` — the entire frontend
+- `Game/GameHub.cs` — `[Authorize]` SignalR hub; persists results when a game ends
+- `Auth/` — PBKDF2 password hashing + JWT token service
+- `Api/` — `/api/auth/register`, `/api/auth/login`, `/api/leaderboard`
+- `Data/` — `User` entity + `AppDbContext`
+- `wwwroot/` — the entire frontend (auth · game · leaderboard)
+
+## Configuration
+| Env var | Purpose | Default |
+|---|---|---|
+| `DATABASE_URL` | Postgres URL (`postgres://…`). If unset, uses a local SQLite file. | SQLite `app.db` |
+| `JWT_KEY` | Secret used to sign JWTs. **Set this in production.** | insecure dev key |
+| `PORT` | Port to listen on (set automatically by most hosts). | 8080 prod / 5000 dev |
+
+> **Persistence note:** on a host with no persistent disk (e.g. Render's free tier)
+> the SQLite file resets on restart. Set `DATABASE_URL` to a managed Postgres
+> (Neon / Supabase / Render Postgres) for a permanent leaderboard.
 
 ## Run locally
 Requires the **.NET 8 SDK** (`dotnet --list-sdks` should show an 8.x).
@@ -55,9 +70,10 @@ Open <http://localhost:8080>.
 > CI/CD line is itself a résumé bullet.
 
 ## Résumé bullet
-> Built and deployed a real-time multiplayer game with ASP.NET Core + SignalR
-> (authoritative server, room-based matchmaking, live state sync over
-> WebSockets); single containerized deploy with CI/CD.
+> Built and deployed a real-time multiplayer game (ASP.NET Core + SignalR):
+> JWT accounts with PBKDF2-hashed passwords, EF Core persistence (SQLite/Postgres),
+> a live leaderboard, an authoritative anti-cheat server, and room-based matchmaking —
+> shipped as a single auto-deployed container.
 
 ## Ideas to extend
 - Score tracking across rounds · rematch button · spectator count

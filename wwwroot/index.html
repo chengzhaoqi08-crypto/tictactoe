@@ -11,20 +11,54 @@
   <main class="card">
     <h1>Tic-Tac-Toe <span class="live">● live</span></h1>
 
-    <section id="lobby" class="lobby">
-      <input id="roomInput" placeholder="Room code (e.g. ABCD)" maxlength="8" autocomplete="off" />
-      <button id="joinBtn">Join / Create</button>
-      <p class="hint">Share the code with a friend — or open this page in two tabs to test.</p>
+    <!-- ===== AUTH ===== -->
+    <section id="authView">
+      <div class="tabs">
+        <button id="tabLogin" class="tab active">Log in</button>
+        <button id="tabRegister" class="tab">Sign up</button>
+      </div>
+      <input id="authUser" placeholder="Username" maxlength="20" autocomplete="username" />
+      <input id="authPass" type="password" placeholder="Password" autocomplete="current-password" />
+      <button id="authSubmit" class="primary">Log in</button>
+      <p class="err" id="authErr"></p>
     </section>
 
-    <section id="game" class="hidden">
-      <p class="status" id="status">Connecting…</p>
-      <p class="you">You are <b id="mark">?</b> &middot; Room <b id="roomLabel"></b></p>
-      <div class="board" id="board"><!-- cells injected by app.js --></div>
-      <button id="restartBtn" class="restart">Restart round</button>
+    <!-- ===== APP (after login) ===== -->
+    <section id="appView" class="hidden">
+      <div class="userbar">
+        <span>Hi, <b id="meName"></b></span>
+        <button id="logout" class="link">Log out</button>
+      </div>
+
+      <div id="lobby" class="lobby">
+        <input id="roomInput" placeholder="Room code (e.g. ABCD)" maxlength="8" autocomplete="off" />
+        <button id="joinBtn" class="primary">Join / Create</button>
+        <p class="hint">Share the code with a friend, or open a second tab to test.</p>
+      </div>
+
+      <div id="game" class="hidden">
+        <p class="status" id="status">Connecting…</p>
+        <p class="you">You are <b id="mark">?</b> &middot; vs <b id="opp">—</b> &middot; Room <b id="roomLabel"></b></p>
+        <div class="board" id="board"></div>
+        <div class="gamebtns">
+          <button id="restartBtn" class="restart">Restart round</button>
+          <button id="leaveBtn" class="link">Leave</button>
+        </div>
+      </div>
+
+      <section class="lb">
+        <div class="lb-head">
+          <h2>🏆 Leaderboard</h2>
+          <button id="lbRefresh" class="link">refresh</button>
+        </div>
+        <table class="lb-table">
+          <thead><tr><th>#</th><th>Player</th><th>W</th><th>L</th><th>D</th></tr></thead>
+          <tbody id="lbBody"></tbody>
+        </table>
+      </section>
     </section>
 
-    <footer>ASP.NET Core &middot; SignalR &middot; vanilla JS</footer>
+    <footer>ASP.NET Core &middot; SignalR &middot; EF Core &middot; JWT</footer>
   </main>
 
   <script src="app.js"></script>

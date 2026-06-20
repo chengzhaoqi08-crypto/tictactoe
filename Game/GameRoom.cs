@@ -1,5 +1,7 @@
 namespace TicTacToe.Game;
 
+public record PlayerInfo(string Mark, string Username);
+
 /// <summary>
 /// The authoritative state of a single tic-tac-toe match. All mutation goes
 /// through the methods below; the hub serializes access with <see cref="Lock"/>.
@@ -10,7 +12,7 @@ public class GameRoom
     public string?[] Board { get; } = new string?[9];   // null / "X" / "O"
     public string Turn { get; private set; } = "X";
     public string? Winner { get; private set; }          // "X" / "O" / "Draw" / null
-    public Dictionary<string, string> Players { get; } = new();  // connectionId -> mark
+    public Dictionary<string, PlayerInfo> Players { get; } = new();  // connectionId -> player
     public object Lock { get; } = new();
 
     public GameRoom(string code) => Code = code;
@@ -18,12 +20,12 @@ public class GameRoom
     public bool IsFull => Players.Count >= 2;
 
     /// <summary>Assigns the connection an "X"/"O" mark, or null if the room is full.</summary>
-    public string? AddPlayer(string connectionId)
+    public string? AddPlayer(string connectionId, string username)
     {
-        if (Players.TryGetValue(connectionId, out var existing)) return existing;
-        if (Players.Count >= 2) return null;                       // join as spectator
-        var mark = Players.Values.Contains("X") ? "O" : "X";
-        Players[connectionId] = mark;
+        if (Players.TryGetValue(connectionId, out var existing)) return existing.Mark;
+        if (Players.Count >= 2) return null;                          // join as spectator
+        var mark = Players.Values.Any(p => p.Mark == "X") ? "O" : "X";
+        Players[connectionId] = new PlayerInfo(mark, username);
         return mark;
     }
 
@@ -34,11 +36,11 @@ public class GameRoom
     {
         if (Winner != null || !IsFull) return false;
         if (cell < 0 || cell >= 9 || Board[cell] != null) return false;
-        if (!Players.TryGetValue(connectionId, out var mark) || mark != Turn) return false;
+        if (!Players.TryGetValue(connectionId, out var p) || p.Mark != Turn) return false;
 
-        Board[cell] = mark;
+        Board[cell] = p.Mark;
         Winner = CheckWinner();
-        if (Winner == null) Turn = mark == "X" ? "O" : "X";
+        if (Winner == null) Turn = p.Mark == "X" ? "O" : "X";
         return true;
     }
 
@@ -47,6 +49,13 @@ public class GameRoom
         for (int i = 0; i < 9; i++) Board[i] = null;
         Turn = "X";
         Winner = null;
+    }
+
+    public (string? xUser, string? oUser) UsersByMark()
+    {
+        var x = Players.Values.FirstOrDefault(p => p.Mark == "X")?.Username;
+        var o = Players.Values.FirstOrDefault(p => p.Mark == "O")?.Username;
+        return (x, o);
     }
 
     private static readonly int[][] Lines =

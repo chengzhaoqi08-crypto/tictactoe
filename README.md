@@ -1,5 +1,8 @@
 # Realtime Tic-Tac-Toe
 
+🎮 **Live demo:** <https://tictactoe-z95h.onrender.com> — open it in two tabs (or
+send a friend the room code) and play. *(Free tier; first load after idle wakes in ~30s.)*
+
 A two-player online tic-tac-toe game. **One ASP.NET Core project** serves the
 web frontend *and* hosts the real-time game server over **SignalR** — frontend,
 backend, and deployment all in a single unit.

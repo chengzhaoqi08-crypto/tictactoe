@@ -1,0 +1,10 @@
+# Render Blueprint — deploys this repo as a free Docker web service.
+# Use it via Render dashboard: New ► Blueprint ► pick this repo.
+services:
+  - type: web
+    name: tictactoe
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    autoDeploy: true
